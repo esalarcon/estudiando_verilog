@@ -1,0 +1,65 @@
+`timescale 1ns/1ps
+
+module tb_axi_ch_write;
+
+    reg clk;
+    reg anreset;
+    reg ready;
+    reg en;
+    wire valid;
+    wire cs;
+
+    axi_ch_write dut (
+        .clk(clk),
+        .anreset(anreset),
+        .ready(ready),
+        .en(en),
+        .valid(valid),
+        .cs(cs)
+    );
+
+    // Reloj: periodo 10ns
+    initial clk = 1;
+    always #5 clk = ~clk;
+
+    initial begin
+        $dumpfile("tb_axi_ch_write.vcd");
+        $dumpvars(0, tb_axi_ch_write);
+
+        anreset = 0;
+        ready = 0;
+        en = 0;
+
+        // Reset activo 15 ns
+        #15 anreset = 1;
+
+        // Activamos en = 1 para iniciar la transferencia
+        #10 en = 1;
+
+        // Esperamos ready 0, valid debe subir y mantenerse
+        #20 ready = 0;
+
+        // ready sube a 1, handshake debe ocurrir, valid sigue en 1 en este ciclo
+        #10 ready = 1;
+
+        // En siguiente ciclo valid debe caer, ready puede caer también
+        #10 ready = 0;
+
+        // Seguimos con en=1, valid debería subir nuevamente esperando nuevo ready
+        #10;
+
+        // ready vuelve a 1, handshake nuevo
+        ready = 1;
+        #10;
+
+        // Bajamos en para parar
+        en = 0;
+        #20 ready = 0;
+
+        #50;
+
+        $finish;
+    end
+
+endmodule
+
